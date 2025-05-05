@@ -1,70 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Pedidos - Sucursal 1</title>
-  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #333; }
-    ul { list-style: none; padding: 0; }
-    li { background: #f9f9f9; padding: 10px; margin-bottom: 8px; border-left: 5px solid #4CAF50; }
-    .alerta { background-color: #ffdddd; padding: 10px; margin-bottom: 20px; border-left: 6px solid red; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
   </style>
 </head>
 <body>
-  <h1>Pedidos en preparación - Sucursal 1</h1>
-  <div id="alerta-container"></div>
-  <ul id="pedido-lista"></ul>
+  <h1>Pedidos - Sucursal 1</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Cliente</th>
+        <th>Total</th>
+        <th>Fecha</th>
+        <th>Forma de Pago</th>
+        <th>Entrega</th>
+        <th>Dirección</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-pedidos">
+      <!-- Los pedidos se insertan aquí con JS -->
+    </tbody>
+  </table>
 
   <script>
-    const lista = document.getElementById("pedido-lista");
-    const alertaContainer = document.getElementById("alerta-container");
-
-    // 1. Cargar pedidos actuales de sucursal 1 en estado PREPARACION
-    fetch("https://buenraviol-back.onrender.com/pedido")
-      .then(response => response.json())
-      .then(pagina => {
-        (pagina.content || []).forEach(pedido => agregarPedidoAlDOM(pedido));
+    fetch('https://buenraviol-back.onrender.com/pedido')
+      .then(res => res.json())
+      .then(pedidos => {
+        const tabla = document.getElementById('tabla-pedidos');
+        // Filtrar solo los pedidos de sucursal 1
+        const pedidosSucursal1 = pedidos.filter(p => p.idSucursal === 1);
+        pedidosSucursal1.forEach(pedido => {
+          const fila = document.createElement('tr');
+          fila.innerHTML = `
+            <td>${pedido.id}</td>
+            <td>${pedido.nombreCliente}</td>
+            <td>$${pedido.total}</td>
+            <td>${pedido.fecha}</td>
+            <td>${pedido.formaPago}</td>
+            <td>${pedido.entrega}</td>
+            <td>${pedido.direccion.calle} ${pedido.direccion.numero}, ${pedido.direccion.departamento}</td>
+          `;
+          tabla.appendChild(fila);
+        });
       })
-      .catch(error => console.error("Error al cargar pedidos:", error));
-
-    // 2. Conectar al WebSocket
-    const socket = new WebSocket("wss://buenraviol-back.onrender.com:10000");
-    const stompClient = Stomp.over(socket);
-
-    stompClient.connect({}, () => {
-      console.log("Conectado al WebSocket");
-
-      // Suscripción al canal de la sucursal 1
-      stompClient.subscribe("/topic/sucursal/1", (mensaje) => {
-        const pedido = JSON.parse(mensaje.body);
-
-        mostrarAlerta("¡Nuevo pedido recibido!");
-        agregarPedidoAlDOM(pedido);
+      .catch(err => {
+        console.error('Error al cargar pedidos:', err);
       });
-    });
-
-    // Función para agregar el pedido a la lista
-    function agregarPedidoAlDOM(pedido) {
-      const item = document.createElement("li");
-      item.innerText = `Cliente: ${pedido.nombreCliente} | Total: $${pedido.total} | Estado: ${pedido.estado}`;
-      lista.appendChild(item);
-    }
-
-    // Función para mostrar alerta
-    function mostrarAlerta(mensaje) {
-      const alerta = document.createElement("div");
-      alerta.className = "alerta";
-      alerta.innerText = mensaje;
-      alertaContainer.appendChild(alerta);
-
-      // Desaparece después de 4 segundos
-      setTimeout(() => {
-        alerta.remove();
-      }, 4000);
-    }
   </script>
 </body>
 </html>

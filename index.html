@@ -31,7 +31,7 @@
       .catch(error => console.error("Error al cargar pedidos:", error));
 
     // 2. Conectar al WebSocket
-    const socket = new WebSocket("wss://buenraviol-back.onrender.com/ws");
+    const socket = new WebSocket("ws://buenraviol-back.onrender.com:10000");
     const stompClient = Stomp.over(socket);
 
     stompClient.connect({}, () => {
